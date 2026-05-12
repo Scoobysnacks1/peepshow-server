@@ -164,3 +164,14 @@ app.post('/interval', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Keep-alive ping every 5 minutes to prevent Render free tier sleeping
+const https = require('https');
+setInterval(() => {
+  const url = process.env.RENDER_EXTERNAL_URL || 'https://peepshow-server.onrender.com';
+  https.get(url, (res) => {
+    console.log(`Keep-alive ping: ${res.statusCode}`);
+  }).on('error', (e) => {
+    console.log(`Keep-alive error: ${e.message}`);
+  });
+}, 5 * 60 * 1000);
