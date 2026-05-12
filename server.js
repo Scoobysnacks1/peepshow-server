@@ -46,7 +46,24 @@ let quotes = [
   "Thoughts? You wanna cut that shit out.",
   "Mummy... coffee... fuckkeee hurry uppeee.",
   "Jeff's doin a joke, everybody QUIET cause Jeff's doin a joke.",
-  "All cocks are jizz-cocks, it's a bit like calling him a piss kidney."
+  "All cocks are jizz-cocks, it's a bit like calling him a piss kidney.",
+  "You like people from the past don't you Mark? Like Napoleon.",
+  "That's a car crash of a shopping basket.",
+  "I don't want sweet punani action, I want to take your bishop and grind you down.",
+  "You want to trick the boiler?",
+  "The last beemer out of Saigon.",
+  "That's not good melon.",
+  "Piece by piece dude.",
+  "Oh no we're getting fucked by the brush.",
+  "Love to mate, love to, but this is all mine and... I want it all, so: gotta be a no.",
+  "Nim Nim fucking Nim!",
+  "You assured me that he'd made a HUGE lemon meringue pie!",
+  "Stick a truncheon up the arris for this one.",
+  "Did you try to get me sectioned?",
+  "Who wants to clog the filter? Lunatics!",
+  "Great, now I'm getting an angry lapdance.",
+  "Would you get me a kebab?",
+  "Minimal water damage."
 ];
 
 function getRandom() {
