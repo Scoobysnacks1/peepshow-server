@@ -2,11 +2,11 @@ const express = require('express');
 const webpush = require('web-push');
 const cors = require('cors');
 const cron = require('node-cron');
-
+ 
 const app = express();
 app.use(express.json());
 app.use(cors());
-
+ 
 // ---- VAPID KEYS ----
 // These are generated on first run and stored in memory
 // In production you'd store these in environment variables
@@ -14,13 +14,13 @@ const vapidKeys = {
   publicKey: process.env.VAPID_PUBLIC_KEY,
   privateKey: process.env.VAPID_PRIVATE_KEY
 };
-
+ 
 webpush.setVapidDetails(
   'mailto:' + (process.env.VAPID_EMAIL || 'peepshow@example.com'),
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
-
+ 
 // ---- IN MEMORY STORE ----
 let subscription = null;
 let intervalMinutes = 15;
@@ -65,11 +65,22 @@ let quotes = [
   "Would you get me a kebab?",
   "Minimal water damage."
 ];
-
+ 
+// Smarter randomness - tracks recently used quotes to avoid repeats
+let recentQuotes = [];
 function getRandom() {
-  return quotes[Math.floor(Math.random() * quotes.length)];
+  const halfLength = Math.floor(quotes.length / 2);
+  let available = quotes.filter(q => !recentQuotes.includes(q));
+  if (available.length === 0) {
+    recentQuotes = [];
+    available = [...quotes];
+  }
+  const quote = available[Math.floor(Math.random() * available.length)];
+  recentQuotes.push(quote);
+  if (recentQuotes.length > halfLength) recentQuotes.shift();
+  return quote;
 }
-
+ 
 function sendQuote() {
   if (!subscription) return;
   const quote = getRandom();
@@ -85,7 +96,7 @@ function sendQuote() {
     }
   });
 }
-
+ 
 function startCron() {
   stopCron();
   isRunning = true;
@@ -96,7 +107,7 @@ function startCron() {
   cronJob = cron.schedule(cronExpr, sendQuote);
   console.log(`Cron started: every ${intervalMinutes} mins`);
 }
-
+ 
 function stopCron() {
   if (cronJob) {
     cronJob.stop();
@@ -105,26 +116,26 @@ function stopCron() {
   isRunning = false;
   console.log('Cron stopped');
 }
-
+ 
 // ---- ROUTES ----
-
+ 
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', running: isRunning, interval: intervalMinutes });
 });
-
+ 
 // Get VAPID public key
 app.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
-
+ 
 // Save push subscription from browser
 app.post('/subscribe', (req, res) => {
   subscription = req.body;
   console.log('Subscription saved');
   res.json({ ok: true });
 });
-
+ 
 // Get current state
 app.get('/state', (req, res) => {
   res.json({
@@ -134,7 +145,7 @@ app.get('/state', (req, res) => {
     hasSubscription: !!subscription
   });
 });
-
+ 
 // Start notifications
 app.post('/start', (req, res) => {
   if (req.body.interval) intervalMinutes = parseInt(req.body.interval);
@@ -142,29 +153,29 @@ app.post('/start', (req, res) => {
   startCron();
   res.json({ ok: true, running: true, interval: intervalMinutes });
 });
-
+ 
 // Stop notifications
 app.post('/stop', (req, res) => {
   stopCron();
   res.json({ ok: true, running: false });
 });
-
+ 
 // Update quotes
 app.post('/quotes', (req, res) => {
   quotes = req.body.quotes;
   res.json({ ok: true, quotes });
 });
-
+ 
 // Update interval (while running)
 app.post('/interval', (req, res) => {
   intervalMinutes = parseInt(req.body.interval);
   if (isRunning) startCron();
   res.json({ ok: true, interval: intervalMinutes });
 });
-
+ 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
+ 
 // Keep-alive ping every 5 minutes to prevent Render free tier sleeping
 const https = require('https');
 setInterval(() => {
@@ -175,3 +186,4 @@ setInterval(() => {
     console.log(`Keep-alive error: ${e.message}`);
   });
 }, 5 * 60 * 1000);
+ 
