@@ -2,11 +2,11 @@ const express = require('express');
 const webpush = require('web-push');
 const cors = require('cors');
 const cron = require('node-cron');
- 
+
 const app = express();
 app.use(express.json());
 app.use(cors());
- 
+
 // ---- VAPID KEYS ----
 // These are generated on first run and stored in memory
 // In production you'd store these in environment variables
@@ -14,13 +14,13 @@ const vapidKeys = {
   publicKey: process.env.VAPID_PUBLIC_KEY,
   privateKey: process.env.VAPID_PRIVATE_KEY
 };
- 
+
 webpush.setVapidDetails(
   'mailto:' + (process.env.VAPID_EMAIL || 'peepshow@example.com'),
   vapidKeys.publicKey,
   vapidKeys.privateKey
 );
- 
+
 // ---- IN MEMORY STORE ----
 let subscription = null;
 let intervalMinutes = 15;
@@ -63,9 +63,18 @@ let quotes = [
   "Who wants to clog the filter? Lunatics!",
   "Great, now I'm getting an angry lapdance.",
   "Would you get me a kebab?",
-  "Minimal water damage."
+  "Minimal water damage.",
+  "We are not the Hair Blair Bunch!",
+  "It's not a no-brainer! I have to think about it. It's a brainer. A real brainer.",
+  "Super Hans says he's come up with a bass loop for our track that is so good that when he tried turning it off, he literally couldn't.",
+  "Guys, you've had your fun with the sectioning. There's going to be no more sectioning today.",
+  "All cocks are jizz cocks really. It's a bit like calling him a piss kidney.",
+  "Oh, piss yourself. Stop pissing yourself. It's not that simple! The floodgates are open!",
+  "A snog is not an affair. You've come here to call off a wedding because of a drunken snog?",
+  "Why do you always think the Yardies are the answer to everything?",
+  "If it looks like a life coach and it's got a certificate saying that it's a life coach, then it's probably a life coach."
 ];
- 
+
 // Smarter randomness - tracks recently used quotes to avoid repeats
 let recentQuotes = [];
 function getRandom() {
@@ -80,7 +89,7 @@ function getRandom() {
   if (recentQuotes.length > halfLength) recentQuotes.shift();
   return quote;
 }
- 
+
 function sendQuote() {
   if (!subscription) return;
   const quote = getRandom();
@@ -96,7 +105,7 @@ function sendQuote() {
     }
   });
 }
- 
+
 function startCron() {
   stopCron();
   isRunning = true;
@@ -107,7 +116,7 @@ function startCron() {
   cronJob = cron.schedule(cronExpr, sendQuote);
   console.log(`Cron started: every ${intervalMinutes} mins`);
 }
- 
+
 function stopCron() {
   if (cronJob) {
     cronJob.stop();
@@ -116,26 +125,26 @@ function stopCron() {
   isRunning = false;
   console.log('Cron stopped');
 }
- 
+
 // ---- ROUTES ----
- 
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ status: 'ok', running: isRunning, interval: intervalMinutes });
 });
- 
+
 // Get VAPID public key
 app.get('/vapid-public-key', (req, res) => {
   res.json({ publicKey: vapidKeys.publicKey });
 });
- 
+
 // Save push subscription from browser
 app.post('/subscribe', (req, res) => {
   subscription = req.body;
   console.log('Subscription saved');
   res.json({ ok: true });
 });
- 
+
 // Get current state
 app.get('/state', (req, res) => {
   res.json({
@@ -145,7 +154,7 @@ app.get('/state', (req, res) => {
     hasSubscription: !!subscription
   });
 });
- 
+
 // Start notifications
 app.post('/start', (req, res) => {
   if (req.body.interval) intervalMinutes = parseInt(req.body.interval);
@@ -153,29 +162,29 @@ app.post('/start', (req, res) => {
   startCron();
   res.json({ ok: true, running: true, interval: intervalMinutes });
 });
- 
+
 // Stop notifications
 app.post('/stop', (req, res) => {
   stopCron();
   res.json({ ok: true, running: false });
 });
- 
+
 // Update quotes
 app.post('/quotes', (req, res) => {
   quotes = req.body.quotes;
   res.json({ ok: true, quotes });
 });
- 
+
 // Update interval (while running)
 app.post('/interval', (req, res) => {
   intervalMinutes = parseInt(req.body.interval);
   if (isRunning) startCron();
   res.json({ ok: true, interval: intervalMinutes });
 });
- 
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
- 
+
 // Keep-alive ping every 5 minutes to prevent Render free tier sleeping
 const https = require('https');
 setInterval(() => {
@@ -186,4 +195,3 @@ setInterval(() => {
     console.log(`Keep-alive error: ${e.message}`);
   });
 }, 5 * 60 * 1000);
- 
